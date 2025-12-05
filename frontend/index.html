@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projeto DevOps - Gerenciador de Dados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-edit {
+            background: #f39c12;
+        }
+
+        .btn-edit:hover {
+            background: #e67e22;
+        }
+
+        .dados-lista {
+            margin-top: 20px;
+        }
+
+        .dado-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s;
+        }
+
+        .dado-item:hover {
+            transform: translateX(5px);
+        }
+
+        .dado-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .dado-nome {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .dado-descricao {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .dado-data {
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .dado-acoes {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dado-acoes button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Gerenciador de Dados</h1>
+        
+        <div id="status"></div>
+
+        <div class="form-container">
+            <h2 id="form-title">➕ Adicionar Novo Dado</h2>
+            <form id="dadoForm">
+                <input type="hidden" id="editId">
+                
+                <div class="form-group">
+                    <label for="nome">Nome *</label>
+                    <input type="text" id="nome" required placeholder="Digite o nome">
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao">Descrição</label>
+                    <textarea id="descricao" placeholder="Digite uma descrição (opcional)"></textarea>
+                </div>
+
+                <button type="submit" class="btn" id="submitBtn">Adicionar</button>
+                <button type="button" class="btn btn-danger" id="cancelBtn" style="display: none;">Cancelar</button>
+            </form>
+        </div>
+
+        <div class="dados-lista">
+            <h2>📋 Lista de Dados</h2>
+            <div id="listaDados">
+                <div class="loading">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://3.22.171.5:3000/api/dados';
+        
+        let editandoId = null;
+
+        // Elementos
+        const form = document.getElementById('dadoForm');
+        const listaDados = document.getElementById('listaDados');
+        const nomeInput = document.getElementById('nome');
+        const descricaoInput = document.getElementById('descricao');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('form-title');
+        const statusDiv = document.getElementById('status');
+
+        // Carregar dados ao iniciar
+        carregarDados();
+
+        // Submit do formulário
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const dados = {
+                nome: nomeInput.value,
+                descricao: descricaoInput.value
+            };
+
+            try {
+                if (editandoId) {
+                    await atualizarDado(editandoId, dados);
+                } else {
+                    await criarDado(dados);
+                }
+                limparFormulario();
+                carregarDados();
+            } catch (error) {
+                mostrarStatus('Erro ao salvar dado: ' + error.message, 'error');
+            }
+        });
+
+        // Cancelar edição
+        cancelBtn.addEventListener('click', limparFormulario);
+
+        // Funções da API
+        async function carregarDados() {
+            try {
+                const response = await fetch(API_URL);
+                const dados = await response.json();
+                
+                if (dados.length === 0) {
+                    listaDados.innerHTML = '<div class="empty-state">Nenhum dado cadastrado ainda.</div>';
+                } else {
+                    listaDados.innerHTML = dados.map(dado => `
+                        <div class="dado-item">
+                            <div class="dado-header">
+                                <div class="dado-nome">${dado.nome}</div>
+                            </div>
+                            ${dado.descricao ? `<div class="dado-descricao">${dado.descricao}</div>` : ''}
+                            <div class="dado-data">Criado em: ${new Date(dado.criado).toLocaleString('pt-BR')}</div>
+                            <div class="dado-acoes">
+                                <button class="btn btn-edit" onclick="editarDado('${dado._id}', '${dado.nome}', '${dado.descricao || ''}')">✏️ Editar</button>
+                                <button class="btn btn-danger" onclick="removerDado('${dado._id}')">🗑️ Remover</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                listaDados.innerHTML = '<div class="empty-state">Erro ao carregar dados.</div>';
+                mostrarStatus('Erro ao carregar dados: ' + error.message, 'error');
+            }
+        }
+
+        async function criarDado(dados) {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            
+            if (!response.ok) throw new Error('Erro ao criar dado');
+            
+            mostrarStatus('Dado criado com sucesso!', 'success');
+        }
+
+        async function atualizarDado(id, dados) {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            
+            if (!response.ok) throw new Error('Erro ao atualizar dado');
+            
+            mostrarStatus('Dado atualizado com sucesso!', 'success');
+        }
+
+        async function removerDado(id) {
+            if (!confirm('Tem certeza que deseja remover este dado?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Erro ao remover dado');
+                
+                mostrarStatus('Dado removido com sucesso!', 'success');
+                carregarDados();
+            } catch (error) {
+                mostrarStatus('Erro ao remover dado: ' + error.message, 'error');
+            }
+        }
+
+        function editarDado(id, nome, descricao) {
+            editandoId = id;
+            nomeInput.value = nome;
+            descricaoInput.value = descricao;
+            submitBtn.textContent = 'Atualizar';
+            cancelBtn.style.display = 'inline-block';
+            formTitle.textContent = '✏️ Editar Dado';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function limparFormulario() {
+            editandoId = null;
+            nomeInput.value = '';
+            descricaoInput.value = '';
+            submitBtn.textContent = 'Adicionar';
+            cancelBtn.style.display = 'none';
+            formTitle.textContent = '➕ Adicionar Novo Dado';
+        }
+
+        function mostrarStatus(mensagem, tipo) {
+            statusDiv.innerHTML = `<div class="status ${tipo}">${mensagem}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

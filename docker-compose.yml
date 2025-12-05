@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: backend-devops
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://devops_user:SuaSenhaForte123@3.22.171.5:27017/devops?authSource=admin
+      - PORT=3000
+    restart: unless-stopped
+    networks:
+      - devops-network
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-devops
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - devops-network
+
+networks:
+  devops-network:
+    driver: bridge
