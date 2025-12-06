@@ -11,10 +11,7 @@ COPY . .
 EXPOSE 3000
 
 CMD ["npm", "start"]
-```
 
-### **Arquivo: `backend/.dockerignore`**
-```
 node_modules
 npm-debug.log
 .env
