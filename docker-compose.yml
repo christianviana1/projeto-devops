@@ -9,6 +9,8 @@ services:
     environment:
       - MONGO_URL=mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@${MONGODB_IP}:27017/${MONGODB_DATABASE}?authSource=admin
       - PORT=3000
+    volumes:
+      - pdf-uploads:/app/uploads
     restart: unless-stopped
     networks:
       - devops-network
@@ -108,3 +110,4 @@ networks:
 volumes:
   mysql-data:
   grafana-data:
+  pdf-uploads:

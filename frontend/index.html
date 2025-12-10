@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projeto DevOps - Gerenciador de Dados</title>
+    <title>Biblioteca Digital - Gerenciador de Livros</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -71,6 +71,10 @@
             min-height: 80px;
         }
 
+        input[type="file"] {
+            padding: 8px;
+        }
+
         .btn {
             background: #667eea;
             color: white;
@@ -103,11 +107,19 @@
             background: #e67e22;
         }
 
-        .dados-lista {
+        .btn-view {
+            background: #3498db;
+        }
+
+        .btn-view:hover {
+            background: #2980b9;
+        }
+
+        .livros-lista {
             margin-top: 20px;
         }
 
-        .dado-item {
+        .livro-item {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
@@ -116,39 +128,47 @@
             transition: transform 0.2s;
         }
 
-        .dado-item:hover {
+        .livro-item:hover {
             transform: translateX(5px);
         }
 
-        .dado-header {
+        .livro-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
         }
 
-        .dado-nome {
-            font-size: 1.3em;
+        .livro-titulo {
+            font-size: 1.4em;
             font-weight: 600;
             color: #333;
         }
 
-        .dado-descricao {
+        .livro-autor {
+            font-size: 1.1em;
+            color: #555;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .livro-descricao {
             color: #666;
             margin-bottom: 10px;
         }
 
-        .dado-data {
+        .livro-data {
             font-size: 0.9em;
             color: #999;
         }
 
-        .dado-acoes {
+        .livro-acoes {
             display: flex;
             gap: 10px;
+            margin-top: 15px;
         }
 
-        .dado-acoes button {
+        .livro-acoes button {
             padding: 8px 16px;
             font-size: 14px;
         }
@@ -182,22 +202,108 @@
             background: #f8d7da;
             color: #721c24;
         }
+
+        /* Modal para visualizar PDF */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            height: 90%;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .close-btn:hover {
+            background: #c0392b;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: calc(100% - 60px);
+            border: none;
+        }
+
+        .pdf-badge {
+            display: inline-block;
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .no-pdf-badge {
+            display: inline-block;
+            background: #95a5a6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Gerenciador de Dados</h1>
-        
+        <h1>📚 Biblioteca Digital</h1>
+
         <div id="status"></div>
 
         <div class="form-container">
-            <h2 id="form-title">➕ Adicionar Novo Dado</h2>
-            <form id="dadoForm">
+            <h2 id="form-title">➕ Adicionar Novo Livro</h2>
+            <form id="livroForm">
                 <input type="hidden" id="editId">
-                
+
                 <div class="form-group">
-                    <label for="nome">Nome *</label>
-                    <input type="text" id="nome" required placeholder="Digite o nome">
+                    <label for="titulo">Título *</label>
+                    <input type="text" id="titulo" required placeholder="Digite o título do livro">
+                </div>
+
+                <div class="form-group">
+                    <label for="autor">Autor *</label>
+                    <input type="text" id="autor" required placeholder="Digite o nome do autor">
                 </div>
 
                 <div class="form-group">
@@ -205,56 +311,82 @@
                     <textarea id="descricao" placeholder="Digite uma descrição (opcional)"></textarea>
                 </div>
 
+                <div class="form-group">
+                    <label for="pdf">Arquivo PDF</label>
+                    <input type="file" id="pdf" accept="application/pdf">
+                    <small style="color: #666;">Tamanho máximo: 10MB</small>
+                </div>
+
                 <button type="submit" class="btn" id="submitBtn">Adicionar</button>
                 <button type="button" class="btn btn-danger" id="cancelBtn" style="display: none;">Cancelar</button>
             </form>
         </div>
 
-        <div class="dados-lista">
-            <h2>📋 Lista de Dados</h2>
-            <div id="listaDados">
+        <div class="livros-lista">
+            <h2>📖 Acervo de Livros</h2>
+            <div id="listaLivros">
                 <div class="loading">Carregando...</div>
             </div>
         </div>
     </div>
 
+    <!-- Modal para visualizar PDF -->
+    <div id="pdfModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitulo">Visualizar PDF</h2>
+                <button class="close-btn" onclick="fecharModal()">✖ Fechar</button>
+            </div>
+            <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+        </div>
+    </div>
+
     <script>
-        const API_URL = 'http://localhost:3000/api/dados';
-        
+        const API_URL = 'http://localhost:3000/api/livros';
+
         let editandoId = null;
 
         // Elementos
-        const form = document.getElementById('dadoForm');
-        const listaDados = document.getElementById('listaDados');
-        const nomeInput = document.getElementById('nome');
+        const form = document.getElementById('livroForm');
+        const listaLivros = document.getElementById('listaLivros');
+        const tituloInput = document.getElementById('titulo');
+        const autorInput = document.getElementById('autor');
         const descricaoInput = document.getElementById('descricao');
+        const pdfInput = document.getElementById('pdf');
         const submitBtn = document.getElementById('submitBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const formTitle = document.getElementById('form-title');
         const statusDiv = document.getElementById('status');
+        const pdfModal = document.getElementById('pdfModal');
+        const pdfViewer = document.getElementById('pdfViewer');
+        const modalTitulo = document.getElementById('modalTitulo');
 
-        // Carregar dados ao iniciar
-        carregarDados();
+        // Carregar livros ao iniciar
+        carregarLivros();
 
         // Submit do formulário
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const dados = {
-                nome: nomeInput.value,
-                descricao: descricaoInput.value
-            };
+
+            const formData = new FormData();
+            formData.append('titulo', tituloInput.value);
+            formData.append('autor', autorInput.value);
+            formData.append('descricao', descricaoInput.value);
+
+            if (pdfInput.files[0]) {
+                formData.append('pdf', pdfInput.files[0]);
+            }
 
             try {
                 if (editandoId) {
-                    await atualizarDado(editandoId, dados);
+                    await atualizarLivro(editandoId, formData);
                 } else {
-                    await criarDado(dados);
+                    await criarLivro(formData);
                 }
                 limparFormulario();
-                carregarDados();
+                carregarLivros();
             } catch (error) {
-                mostrarStatus('Erro ao salvar dado: ' + error.message, 'error');
+                mostrarStatus('Erro ao salvar livro: ' + error.message, 'error');
             }
         });
 
@@ -262,92 +394,121 @@
         cancelBtn.addEventListener('click', limparFormulario);
 
         // Funções da API
-        async function carregarDados() {
+        async function carregarLivros() {
             try {
                 const response = await fetch(API_URL);
-                const dados = await response.json();
-                
-                if (dados.length === 0) {
-                    listaDados.innerHTML = '<div class="empty-state">Nenhum dado cadastrado ainda.</div>';
+                const livros = await response.json();
+
+                if (livros.length === 0) {
+                    listaLivros.innerHTML = '<div class="empty-state">Nenhum livro cadastrado ainda.</div>';
                 } else {
-                    listaDados.innerHTML = dados.map(dado => `
-                        <div class="dado-item">
-                            <div class="dado-header">
-                                <div class="dado-nome">${dado.nome}</div>
+                    listaLivros.innerHTML = livros.map(livro => `
+                        <div class="livro-item">
+                            <div class="livro-titulo">
+                                ${livro.titulo}
+                                ${livro.pdfPath ? '<span class="pdf-badge">📄 PDF</span>' : '<span class="no-pdf-badge">Sem PDF</span>'}
                             </div>
-                            ${dado.descricao ? `<div class="dado-descricao">${dado.descricao}</div>` : ''}
-                            <div class="dado-data">Criado em: ${new Date(dado.criado).toLocaleString('pt-BR')}</div>
-                            <div class="dado-acoes">
-                                <button class="btn btn-edit" onclick="editarDado('${dado._id}', '${dado.nome}', '${dado.descricao || ''}')">✏️ Editar</button>
-                                <button class="btn btn-danger" onclick="removerDado('${dado._id}')">🗑️ Remover</button>
+                            <div class="livro-autor">por ${livro.autor}</div>
+                            ${livro.descricao ? `<div class="livro-descricao">${livro.descricao}</div>` : ''}
+                            <div class="livro-data">Adicionado em: ${new Date(livro.criado).toLocaleString('pt-BR')}</div>
+                            <div class="livro-acoes">
+                                ${livro.pdfPath ? `<button class="btn btn-view" onclick="visualizarPDF('${livro._id}', '${livro.titulo}')">🔍 Ver PDF</button>` : ''}
+                                <button class="btn btn-edit" onclick="editarLivro('${livro._id}', '${encodeURIComponent(livro.titulo)}', '${encodeURIComponent(livro.autor)}', '${encodeURIComponent(livro.descricao || '')}')">✏️ Editar</button>
+                                <button class="btn btn-danger" onclick="removerLivro('${livro._id}')">🗑️ Remover</button>
                             </div>
                         </div>
                     `).join('');
                 }
             } catch (error) {
-                listaDados.innerHTML = '<div class="empty-state">Erro ao carregar dados.</div>';
-                mostrarStatus('Erro ao carregar dados: ' + error.message, 'error');
+                listaLivros.innerHTML = '<div class="empty-state">Erro ao carregar livros.</div>';
+                mostrarStatus('Erro ao carregar livros: ' + error.message, 'error');
             }
         }
 
-        async function criarDado(dados) {
+        async function criarLivro(formData) {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
+                body: formData
             });
-            
-            if (!response.ok) throw new Error('Erro ao criar dado');
-            
-            mostrarStatus('Dado criado com sucesso!', 'success');
+
+            if (!response.ok) throw new Error('Erro ao criar livro');
+
+            mostrarStatus('Livro criado com sucesso!', 'success');
         }
 
-        async function atualizarDado(id, dados) {
+        async function atualizarLivro(id, formData) {
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
+                body: formData
             });
-            
-            if (!response.ok) throw new Error('Erro ao atualizar dado');
-            
-            mostrarStatus('Dado atualizado com sucesso!', 'success');
+
+            if (!response.ok) throw new Error('Erro ao atualizar livro');
+
+            mostrarStatus('Livro atualizado com sucesso!', 'success');
         }
 
-        async function removerDado(id) {
-            if (!confirm('Tem certeza que deseja remover este dado?')) return;
-            
+        async function removerLivro(id) {
+            if (!confirm('Tem certeza que deseja remover este livro?')) return;
+
             try {
                 const response = await fetch(`${API_URL}/${id}`, {
                     method: 'DELETE'
                 });
-                
-                if (!response.ok) throw new Error('Erro ao remover dado');
-                
-                mostrarStatus('Dado removido com sucesso!', 'success');
-                carregarDados();
+
+                if (!response.ok) throw new Error('Erro ao remover livro');
+
+                mostrarStatus('Livro removido com sucesso!', 'success');
+                carregarLivros();
             } catch (error) {
-                mostrarStatus('Erro ao remover dado: ' + error.message, 'error');
+                mostrarStatus('Erro ao remover livro: ' + error.message, 'error');
             }
         }
 
-        function editarDado(id, nome, descricao) {
+        function visualizarPDF(id, titulo) {
+            modalTitulo.textContent = titulo;
+            pdfViewer.src = `${API_URL}/${id}/pdf`;
+            pdfModal.classList.add('active');
+        }
+
+        function fecharModal() {
+            pdfModal.classList.remove('active');
+            pdfViewer.src = '';
+        }
+
+        // Fechar modal ao clicar fora
+        pdfModal.addEventListener('click', (e) => {
+            if (e.target === pdfModal) {
+                fecharModal();
+            }
+        });
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && pdfModal.classList.contains('active')) {
+                fecharModal();
+            }
+        });
+
+        function editarLivro(id, titulo, autor, descricao) {
             editandoId = id;
-            nomeInput.value = nome;
-            descricaoInput.value = descricao;
+            tituloInput.value = decodeURIComponent(titulo);
+            autorInput.value = decodeURIComponent(autor);
+            descricaoInput.value = decodeURIComponent(descricao);
             submitBtn.textContent = 'Atualizar';
             cancelBtn.style.display = 'inline-block';
-            formTitle.textContent = '✏️ Editar Dado';
+            formTitle.textContent = '✏️ Editar Livro';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function limparFormulario() {
             editandoId = null;
-            nomeInput.value = '';
+            tituloInput.value = '';
+            autorInput.value = '';
             descricaoInput.value = '';
+            pdfInput.value = '';
             submitBtn.textContent = 'Adicionar';
             cancelBtn.style.display = 'none';
-            formTitle.textContent = '➕ Adicionar Novo Dado';
+            formTitle.textContent = '➕ Adicionar Novo Livro';
         }
 
         function mostrarStatus(mensagem, tipo) {
