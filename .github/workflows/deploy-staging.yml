@@ -1,0 +1,63 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    name: Deploy to AWS Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to AWS EC2 Staging
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # Navegar para o diretório do projeto
+            cd ~/projeto-devops || exit 1
+
+            # Fazer pull das últimas mudanças da branch staging
+            git fetch origin
+            git checkout staging
+            git pull origin staging
+
+            # Atualizar variáveis de ambiente se necessário
+            if [ -f .env ]; then
+              echo "✅ Arquivo .env encontrado"
+            else
+              echo "⚠️  Arquivo .env não encontrado!"
+              exit 1
+            fi
+
+            # Parar containers antigos
+            docker-compose down
+
+            # Rebuild das imagens (sem cache para garantir atualização)
+            docker-compose build --no-cache
+
+            # Subir containers
+            docker-compose up -d
+
+            # Aguardar alguns segundos
+            sleep 5
+
+            # Verificar status dos containers
+            docker-compose ps
+
+            # Mostrar logs do backend
+            echo "📋 Logs do Backend:"
+            docker logs --tail 20 backend-devops
+
+            # Limpar imagens antigas não utilizadas
+            docker image prune -f
+
+            echo "✅ Deploy em staging concluído!"
